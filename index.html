@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Calculater</title>
+  <title>Calculator</title>
   <style>
     :root {
       color-scheme: light;
@@ -123,7 +123,7 @@
   </style>
 </head>
 <body>
-  <main aria-label="계산기">
+  <main aria-label="Calculator">
     <section class="display" aria-live="polite">
       <div id="expression" class="expression"></div>
       <div id="result" class="result">0</div>
@@ -131,14 +131,14 @@
 
     <section class="keys">
       <button class="clear" type="button" data-action="clear">C</button>
-      <button class="backspace" type="button" data-action="backspace">⌫</button>
-      <button class="operator" type="button" data-value="/">÷</button>
-      <button class="operator" type="button" data-value="*">×</button>
+      <button class="backspace" type="button" data-action="backspace">Back</button>
+      <button class="operator" type="button" data-value="/">/</button>
+      <button class="operator" type="button" data-value="*">*</button>
 
       <button type="button" data-value="7">7</button>
       <button type="button" data-value="8">8</button>
       <button type="button" data-value="9">9</button>
-      <button class="operator" type="button" data-value="-">−</button>
+      <button class="operator" type="button" data-value="-">-</button>
 
       <button type="button" data-value="4">4</button>
       <button type="button" data-value="5">5</button>
@@ -166,8 +166,8 @@
     const operators = ["+", "-", "*", "/"];
 
     function updateDisplay(message) {
-      expressionEl.textContent = expression.replaceAll("*", "×").replaceAll("/", "÷");
-      resultEl.textContent = message || expressionEl.textContent || "0";
+      expressionEl.textContent = expression;
+      resultEl.textContent = message || expression || "0";
     }
 
     function getLastNumber() {
@@ -228,7 +228,7 @@
         const op = ops.pop();
 
         if (op === "/" && right === 0) {
-          throw new Error("0으로 나눌 수 없습니다");
+          throw new Error("Cannot divide by zero");
         }
 
         if (op === "+") values.push(left + right);
@@ -243,9 +243,11 @@
             if (token === "-" && (index === 0 || operators.includes(tokens[index - 1]))) {
               values.push(0);
             }
+
             while (ops.length && precedence[ops.at(-1)] >= precedence[token]) {
               applyOperator();
             }
+
             ops.push(token);
           } else {
             values.push(Number(token));
