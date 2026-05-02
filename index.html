@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calculater</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3f5f8;
+      --panel: #ffffff;
+      --text: #20242c;
+      --muted: #697383;
+      --border: #d9dee7;
+      --number: #eef2f7;
+      --number-hover: #e3e9f2;
+      --action: #2f6fed;
+      --action-hover: #245ed0;
+      --danger: #e45757;
+      --danger-hover: #cc4747;
+      --shadow: 0 16px 40px rgba(28, 36, 52, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    main {
+      width: min(92vw, 360px);
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .display {
+      min-height: 92px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fbfcfe;
+      text-align: right;
+      overflow: hidden;
+    }
+
+    .expression {
+      min-height: 22px;
+      color: var(--muted);
+      font-size: 15px;
+      overflow-wrap: anywhere;
+    }
+
+    .result {
+      min-height: 42px;
+      margin-top: 6px;
+      font-size: 34px;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .keys {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    button {
+      min-height: 58px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--number);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    button:hover {
+      background: var(--number-hover);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .operator,
+    .equals {
+      background: var(--action);
+      color: #ffffff;
+    }
+
+    .operator:hover,
+    .equals:hover {
+      background: var(--action-hover);
+    }
+
+    .clear,
+    .backspace {
+      background: var(--danger);
+      color: #ffffff;
+    }
+
+    .clear:hover,
+    .backspace:hover {
+      background: var(--danger-hover);
+    }
+
+    .zero {
+      grid-column: span 2;
+    }
+  </style>
+</head>
+<body>
+  <main aria-label="계산기">
+    <section class="display" aria-live="polite">
+      <div id="expression" class="expression"></div>
+      <div id="result" class="result">0</div>
+    </section>
+
+    <section class="keys">
+      <button class="clear" type="button" data-action="clear">C</button>
+      <button class="backspace" type="button" data-action="backspace">⌫</button>
+      <button class="operator" type="button" data-value="/">÷</button>
+      <button class="operator" type="button" data-value="*">×</button>
+
+      <button type="button" data-value="7">7</button>
+      <button type="button" data-value="8">8</button>
+      <button type="button" data-value="9">9</button>
+      <button class="operator" type="button" data-value="-">−</button>
+
+      <button type="button" data-value="4">4</button>
+      <button type="button" data-value="5">5</button>
+      <button type="button" data-value="6">6</button>
+      <button class="operator" type="button" data-value="+">+</button>
+
+      <button type="button" data-value="1">1</button>
+      <button type="button" data-value="2">2</button>
+      <button type="button" data-value="3">3</button>
+      <button class="equals" type="button" data-action="equals">=</button>
+
+      <button class="zero" type="button" data-value="0">0</button>
+      <button type="button" data-value=".">.</button>
+    </section>
+  </main>
+
+  <script>
+    const expressionEl = document.querySelector("#expression");
+    const resultEl = document.querySelector("#result");
+    const keysEl = document.querySelector(".keys");
+
+    let expression = "";
+    let justCalculated = false;
+
+    const operators = ["+", "-", "*", "/"];
+
+    function updateDisplay(message) {
+      expressionEl.textContent = expression.replaceAll("*", "×").replaceAll("/", "÷");
+      resultEl.textContent = message || expressionEl.textContent || "0";
+    }
+
+    function getLastNumber() {
+      return expression.split(/[+\-*/]/).pop();
+    }
+
+    function addValue(value) {
+      if (justCalculated && !operators.includes(value)) {
+        expression = "";
+      }
+
+      justCalculated = false;
+
+      if (value === ".") {
+        const lastNumber = getLastNumber();
+        if (lastNumber.includes(".")) return;
+        expression += lastNumber ? "." : "0.";
+        updateDisplay();
+        return;
+      }
+
+      if (operators.includes(value)) {
+        if (!expression && value !== "-") return;
+        if (operators.includes(expression.at(-1))) {
+          expression = expression.slice(0, -1);
+        }
+      }
+
+      expression += value;
+      updateDisplay();
+    }
+
+    function clearAll() {
+      expression = "";
+      justCalculated = false;
+      updateDisplay();
+    }
+
+    function backspace() {
+      expression = expression.slice(0, -1);
+      justCalculated = false;
+      updateDisplay();
+    }
+
+    function calculate() {
+      if (!expression || operators.includes(expression.at(-1))) return;
+
+      const tokens = expression.match(/(\d+\.?\d*|\.\d+|[+\-*/])/g);
+      if (!tokens) return;
+
+      const values = [];
+      const ops = [];
+      const precedence = { "+": 1, "-": 1, "*": 2, "/": 2 };
+
+      function applyOperator() {
+        const right = values.pop();
+        const left = values.pop();
+        const op = ops.pop();
+
+        if (op === "/" && right === 0) {
+          throw new Error("0으로 나눌 수 없습니다");
+        }
+
+        if (op === "+") values.push(left + right);
+        if (op === "-") values.push(left - right);
+        if (op === "*") values.push(left * right);
+        if (op === "/") values.push(left / right);
+      }
+
+      try {
+        tokens.forEach((token, index) => {
+          if (operators.includes(token)) {
+            if (token === "-" && (index === 0 || operators.includes(tokens[index - 1]))) {
+              values.push(0);
+            }
+            while (ops.length && precedence[ops.at(-1)] >= precedence[token]) {
+              applyOperator();
+            }
+            ops.push(token);
+          } else {
+            values.push(Number(token));
+          }
+        });
+
+        while (ops.length) applyOperator();
+
+        const total = Number.parseFloat(values[0].toFixed(10));
+        expression = String(total);
+        justCalculated = true;
+        updateDisplay(String(total));
+      } catch (error) {
+        updateDisplay(error.message);
+        expression = "";
+        justCalculated = true;
+      }
+    }
+
+    keysEl.addEventListener("click", (event) => {
+      const button = event.target.closest("button");
+      if (!button) return;
+
+      if (button.dataset.value) addValue(button.dataset.value);
+      if (button.dataset.action === "clear") clearAll();
+      if (button.dataset.action === "backspace") backspace();
+      if (button.dataset.action === "equals") calculate();
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (/^[0-9.]$/.test(event.key)) addValue(event.key);
+      if (operators.includes(event.key)) addValue(event.key);
+      if (event.key === "Enter" || event.key === "=") calculate();
+      if (event.key === "Backspace") backspace();
+      if (event.key === "Escape") clearAll();
+    });
+  </script>
+</body>
+</html>
